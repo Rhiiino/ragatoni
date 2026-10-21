@@ -2,37 +2,34 @@
 
 # RAG-a-toni
 
-A local web app for learning retrieval-augmented generation step by step. The screen walks through upload, extract, chunk, embed, store, and ask. Each pipeline stage after upload is a separate Python module.
+**Live demo:** [ragatoni.noteinstein.org](https://ragatoni.noteinstein.org)
 
-Source: https://github.com/Rhiiino/ragatoni
+RAG-a-toni is a step-by-step web app for learning retrieval-augmented generation. Upload a PDF, Markdown, or plain-text file, then walk through extract, chunk, embed, store, and ask. Each pipeline stage after upload is a separate Python module; the React UI shows one stage at a time and surfaces token counts and cost where OpenAI is used.
+
+Source: [github.com/Rhiiino/ragatoni](https://github.com/Rhiiino/ragatoni)
 
 ## Project description
 
-The frontend shows six steps and marks the active one. A header and footer frame the page. Once Ask is open, those steps can be clicked to move between stages. Upload is first. It accepts one document by drop or file picker, sends that file to the API, and the page moves to Extract. Extract reads the text from a PDF, Markdown, or plain text file and shows it in a scrolling box. Continue sits at the top right on Extract, Chunk, and Embed. Continue on Extract moves to Chunk. Chunk takes a character size and an overlap, sends the extracted text to the API, and shows the passages with a summary of the split. Those numbers can be changed and sent again. Continue on Chunk becomes available once the passages exist, then moves to Embed. Embed offers five OpenAI embedding choices in a custom menu, each with its dimension count and price per million tokens. Embed sends the passages to the API, which calls that model and shows the token count, the cost, and a short preview of each vector. Continue on Embed stores those passages in Postgres and opens Store. Store plays a green check as the save starts and confirms the document when the save finishes. Continue at the top right of Store opens Ask. Ask offers five OpenAI chat models in the same kind of menu, each with its input and output price per million tokens. After a model is selected, the page is a chat. Each reply can search and read the stored document, and the turn shows its cost. A browser session id is kept locally and stored with each document. Reloading loads that session's documents. When the session has stored documents, Upload shows Upload and Choose file instead of the drop zone. Choose file lists those documents, and Continue opens Ask for the selected one. A session with no stored documents still sees the drop zone. The FastAPI backend exposes a health check plus upload, chunk, embed, store, list, and ask.
+The app teaches RAG as a visible pipeline: text extraction, configurable chunking, embedding model choice, pgvector storage, and chat grounded on the stored passages. Sessions are tracked in the browser so you can return to stored documents and continue in Ask. The backend is FastAPI; the frontend is Vite and React.
 
 ## Project dependencies
 
 - Python 3.10+
 - Node.js and npm
-- Docker (Postgres and Adminer)
+- Docker (Postgres with pgvector; optional Adminer for local DB inspection)
 
-Backend Python packages are listed in `backend/requirements.txt`, including `openai` for embed and ask, and `psycopg` for Postgres. The frontend uses Vite and React.
+Backend packages are in `backend/requirements.txt` (`openai`, `psycopg`, FastAPI, and related). The frontend uses Vite and React.
 
 ## Project directory structure
 
 ```
 rag-a-toni/
 ├── README.md
-├── rag-a-toni-api.service
-├── rag-a-toni-web.service
 ├── .gitignore
-├── .cursor/
-│   └── rules/
-│       └── blast-radius.mdc
 ├── docker-compose.yml
 ├── backend/
 │   ├── requirements.txt
-│   ├── .env
+│   ├── .env.example
 │   └── src/
 │       ├── main.py
 │       ├── core/
@@ -55,8 +52,6 @@ rag-a-toni/
         ├── main.tsx
         └── styles.css
 ```
-
-Before an agent creates, updates, or deletes files in this tree, it shows a review table and waits for confirmation. That workflow is in `.cursor/rules/blast-radius.mdc`.
 
 ## DB schema
 
@@ -84,14 +79,32 @@ Postgres with the `vector` extension. A document belongs to one browser session.
 | body | text | Passage text |
 | embedding | vector | pgvector column. Length matches documents.dimensions |
 
+## Configuration
+
+Copy `backend/.env.example` to `backend/.env` and set `OPENAI_API_KEY` before embedding and chat steps. Other values can stay at the defaults for local development.
+
+| Variable | Purpose |
+|---|---|
+| `OPENAI_API_KEY` | Required for embed and ask |
+| `DATABASE_URL` | Postgres connection (default matches Docker Compose on port 5439) |
+| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API |
+
+Never commit a populated `backend/.env`.
+
 ## Quick start
 
-1. Set `OPENAI_API_KEY` in `backend/.env` when you reach embedding and chat steps.
+1. Postgres (from repo root):
+
+```bash
+docker compose --env-file backend/.env up -d
+```
 
 2. Backend:
 
 ```bash
 cd backend
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY when you reach embed / ask
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -106,28 +119,4 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5188 for the home page. API health: http://127.0.0.1:8015/health
-
-Public URL (via Cloudflare tunnel and Caddy): https://ragatoni.noteinstein.org — UI on port 5188; browser calls to `/api/*` are routed to the API on 8015. Database UI: https://ragatonidb.noteinstein.org (Adminer on port 9029).
-
-5. Keep it running on Ryon (optional):
-
-```bash
-cp rag-a-toni-api.service rag-a-toni-web.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now rag-a-toni-api.service rag-a-toni-web.service
-```
-
-Reload Caddy after changing `caddy/Caddyfile`:
-
-```bash
-/usr/local/bin/caddy reload --config /home/mittens/Documents/myrepos/caddy/Caddyfile
-```
-
-6. Postgres and Adminer:
-
-```bash
-docker compose --env-file backend/.env up -d
-```
-
-Database URL defaults to `postgresql+psycopg://rag:rag@127.0.0.1:5439/rag_a_toni` in `backend/.env`. Adminer is at https://ragatonidb.noteinstein.org. Sign in with system PostgreSQL, server `db`, and the `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` values from that file.
+Open [http://127.0.0.1:5188](http://127.0.0.1:5188). API health: [http://127.0.0.1:8015/health](http://127.0.0.1:8015/health). The dev server proxies `/api` to the backend.
