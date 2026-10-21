@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     port: 5188,
     host: "127.0.0.1",
-    allowedHosts: ["ragatoni.themidhunraj.com"],
+    allowedHosts: ["rag-toni.themidhunraj.com"],
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8015",
@@ -20,6 +20,6 @@ export default defineConfig({
   preview: {
     port: 5188,
     host: "127.0.0.1",
-    allowedHosts: ["ragatoni.themidhunraj.com"],
+    allowedHosts: ["rag-toni.themidhunraj.com"],
   },
 });
