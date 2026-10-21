@@ -2,7 +2,7 @@
 
 # RAG-a-toni
 
-**Live demo:** [ragatoni.noteinstein.org](https://ragatoni.noteinstein.org)
+**Live demo:** [ragatoni.themidhunraj.com](https://ragatoni.themidhunraj.com)
 
 RAG-a-toni is a step-by-step web app for learning retrieval-augmented generation. Upload a PDF, Markdown, or plain-text file, then walk through extract, chunk, embed, store, and ask. Each pipeline stage after upload is a separate Python module; the React UI shows one stage at a time and surfaces token counts and cost where OpenAI is used.
 
@@ -16,7 +16,7 @@ The app teaches RAG as a visible pipeline: text extraction, configurable chunkin
 
 - Python 3.10+
 - Node.js and npm
-- Docker (Postgres with pgvector; optional Adminer for local DB inspection)
+- Docker (Postgres with pgvector)
 
 Backend packages are in `backend/requirements.txt` (`openai`, `psycopg`, FastAPI, and related). The frontend uses Vite and React.
 
@@ -81,15 +81,15 @@ Postgres with the `vector` extension. A document belongs to one browser session.
 
 ## Configuration
 
-Copy `backend/.env.example` to `backend/.env` and set `OPENAI_API_KEY` before embedding and chat steps. Other values can stay at the defaults for local development.
+Create `backend/.env` with at least:
 
 | Variable | Purpose |
 |---|---|
-| `OPENAI_API_KEY` | Required for embed and ask |
-| `DATABASE_URL` | Postgres connection (default matches Docker Compose on port 5439) |
-| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API |
+| `OPENAI_API_KEY` | Embedding and chat |
+| `DATABASE_URL` | Postgres connection (default in `.env.example` matches Docker Compose on port 5439) |
+| `CORS_ORIGINS` | Browser origins allowed to call the API (include your dev URL and production site if you deploy) |
 
-Never commit a populated `backend/.env`.
+See `backend/.env.example` for other defaults.
 
 ## Quick start
 
@@ -103,8 +103,6 @@ docker compose --env-file backend/.env up -d
 
 ```bash
 cd backend
-cp .env.example .env
-# Edit .env and set OPENAI_API_KEY when you reach embed / ask
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
