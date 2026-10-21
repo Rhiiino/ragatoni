@@ -49,6 +49,9 @@ rag-a-toni/
     ├── index.html
     ├── package.json
     ├── vite.config.ts
+    ├── .env.example
+    ├── server/
+    │   └── keelPageVisits.mjs
     └── src/
         ├── App.tsx
         ├── main.tsx
@@ -90,8 +93,9 @@ Create `backend/.env` with at least:
 | `OPENAI_API_KEY` | Embedding and chat |
 | `DATABASE_URL` | Postgres connection (default in `.env.example` matches Docker Compose on port 5439) |
 | `CORS_ORIGINS` | Browser origins allowed to call the API (include your dev URL and production site if you deploy) |
+| `KEEL_INGEST_TOKEN` | In `frontend/.env`. Server-only page-visit token for Keel. Do not prefix it with `VITE_` |
 
-See `backend/.env.example` for other defaults.
+See `backend/.env.example` and `frontend/.env.example` for the other defaults.
 
 ## Quick start
 
