@@ -1,0 +1,37 @@
+# rag-a-toni/docker-compose.yml
+# Postgres with pgvector for the RAG index, plus Adminer.
+# Usage: docker compose --env-file backend/.env up -d
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: rag_a_toni_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rag}
+      POSTGRES_DB: ${POSTGRES_DB:-rag_a_toni}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5439}:5432"
+    volumes:
+      - rag_a_toni_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rag} -d ${POSTGRES_DB:-rag_a_toni}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:4
+    container_name: rag_a_toni_adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-9029}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  rag_a_toni_pgdata:
