@@ -4,7 +4,7 @@
   <img src="frontend/src/assets/ragatoni-logo.png" alt="RAG-a-toni" width="680" />
 </p>
 
-**Live demo:** [rag-toni.themidhunraj.com](https://rag-toni.themidhunraj.com)
+**Live demo:** [ragatoni.themidhunraj.com](https://ragatoni.themidhunraj.com)
 
 RAG-a-toni is a step-by-step web app for learning retrieval-augmented generation. Upload a PDF, Markdown, or plain-text file, then walk through extract, chunk, embed, store, and ask. Each pipeline stage after upload is a separate Python module; the React UI shows one stage at a time and surfaces token counts and cost where OpenAI is used.
 
