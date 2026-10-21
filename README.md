@@ -1,6 +1,8 @@
 <!-- rag-a-toni/README.md -->
 
-# RAG-a-toni
+<p align="center">
+  <img src="frontend/src/assets/ragatoni-logo.png" alt="RAG-a-toni" width="680" />
+</p>
 
 **Live demo:** [ragatoni.themidhunraj.com](https://ragatoni.themidhunraj.com)
 
