@@ -4,7 +4,7 @@
 
 A local web app for learning retrieval-augmented generation step by step. The screen walks through upload, extract, chunk, embed, store, and ask. Each pipeline stage after upload is a separate Python module.
 
-Source: https://github.com/Rhiino/ragatoni
+Source: https://github.com/Rhiiino/ragatoni
 
 ## Project description
 
