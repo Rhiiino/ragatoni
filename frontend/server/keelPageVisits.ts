@@ -1,4 +1,4 @@
-// rag-a-toni/frontend/server/keelPageVisits.ts
+// ragatoni/frontend/server/keelPageVisits.ts
 
 import type { Plugin } from "vite";
 import { keelPageVisits as createKeelPageVisits, readIndexTitle as readTitle } from "./keelPageVisits.mjs";

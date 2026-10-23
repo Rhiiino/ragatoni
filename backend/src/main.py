@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/main.py
+# ragatoni/backend/src/main.py
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

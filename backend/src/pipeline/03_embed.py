@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/pipeline/03_embed.py
+# ragatoni/backend/src/pipeline/03_embed.py
 
 """Step 3: embed chunk text with an OpenAI embedding model."""
 

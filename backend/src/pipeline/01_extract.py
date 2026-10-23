@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/pipeline/01_extract.py
+# ragatoni/backend/src/pipeline/01_extract.py
 
 """Step 1: extract plain text from an uploaded file (.txt, .md, or .pdf)."""
 

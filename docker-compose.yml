@@ -1,6 +1,9 @@
-# rag-a-toni/docker-compose.yml
+# ragatoni/docker-compose.yml
 # Postgres with pgvector for the RAG index, plus Adminer.
 # Usage: docker compose --env-file backend/.env up -d
+# Project name stays rag-a-toni so volume rag-a-toni_rag_a_toni_pgdata stays attached.
+
+name: rag-a-toni
 
 services:
   db:

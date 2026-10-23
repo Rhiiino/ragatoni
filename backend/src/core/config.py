@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/core/config.py
+# ragatoni/backend/src/core/config.py
 
 from functools import cached_property
 

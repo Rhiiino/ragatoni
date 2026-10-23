@@ -1,4 +1,4 @@
-// rag-a-toni/frontend/server/keelPageVisits.d.mts
+// ragatoni/frontend/server/keelPageVisits.d.mts
 
 import type { Plugin } from "vite";
 

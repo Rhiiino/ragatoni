@@ -1,4 +1,4 @@
-<!-- rag-a-toni/README.md -->
+<!-- ragatoni/README.md -->
 
 <p align="center">
   <img src="frontend/src/assets/ragatoni-logo.png" alt="RAG-a-toni" width="680" />
@@ -25,7 +25,7 @@ Backend packages are in `backend/requirements.txt` (`openai`, `psycopg`, FastAPI
 ## Project directory structure
 
 ```
-rag-a-toni/
+ragatoni/
 ├── README.md
 ├── .gitignore
 ├── docker-compose.yml

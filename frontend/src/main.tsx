@@ -1,4 +1,4 @@
-// rag-a-toni/frontend/src/main.tsx
+// ragatoni/frontend/src/main.tsx
 
 import React from "react";
 import ReactDOM from "react-dom/client";

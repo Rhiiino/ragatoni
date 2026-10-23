@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/pipeline/02_chunk.py
+# ragatoni/backend/src/pipeline/02_chunk.py
 
 """Step 2: split extracted text into chunks and attach metadata (index, heading, filename)."""
 

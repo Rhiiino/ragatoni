@@ -1,4 +1,4 @@
-// rag-a-toni/frontend/src/App.tsx
+// ragatoni/frontend/src/App.tsx
 
 import { useEffect, useRef, useState } from "react";
 

@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/pipeline/04_store.py
+# ragatoni/backend/src/pipeline/04_store.py
 
 """Step 4: persist chunk text, metadata, and vectors in Postgres with pgvector."""
 

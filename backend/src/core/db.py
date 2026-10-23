@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/core/db.py
+# ragatoni/backend/src/core/db.py
 
 """Postgres connection and the documents/chunks schema."""
 

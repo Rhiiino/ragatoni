@@ -1,1 +1,1 @@
-# rag-a-toni/backend/src/core/__init__.py
+# ragatoni/backend/src/core/__init__.py

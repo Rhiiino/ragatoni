@@ -1,4 +1,4 @@
-# rag-a-toni/backend/src/pipeline/05_ask.py
+# ragatoni/backend/src/pipeline/05_ask.py
 
 """Step 5: answer questions about one stored document with searchable tools."""
 
