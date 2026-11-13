@@ -21,7 +21,11 @@ ragatoni/
 ├── README.md
 └── plan/
     ├── README.md
-    └── general.md
+    ├── general.md
+    └── mock/
+        ├── dashboard.md
+        ├── dashboard.html
+        └── ragatoni-logo.png
 ```
 
 ## DB schema

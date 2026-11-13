@@ -1,0 +1,2173 @@
+<!-- plan/mock/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ragatoni</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f4f7fb;
+      --muted: #c5d0de;
+      --faint: #8b98ab;
+      --line: rgba(255, 255, 255, 0.16);
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-2: rgba(16, 22, 32, 0.55);
+      --accent: #9ec0ea;
+      --good: #8fbf7a;
+      --docs-w: 680px;
+      --lower-w: min(400px, calc((50vw - 56px) / 2.5));
+      --lower-h: min(460px, calc(100vh - 240px));
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: var(--ink);
+      font: 15px/1.45 "Segoe UI", sans-serif;
+      background:
+        radial-gradient(720px 420px at 8% 0%, rgba(147, 178, 224, 0.34), transparent 62%),
+        radial-gradient(640px 380px at 94% 6%, rgba(168, 198, 188, 0.2), transparent 58%),
+        radial-gradient(520px 320px at 72% 100%, rgba(126, 150, 196, 0.16), transparent 60%),
+        linear-gradient(160deg, #243044 0%, #161b26 48%, #1c2832 100%);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      padding: 22px 20px 8px;
+    }
+
+    header img {
+      height: 64px;
+      width: auto;
+      display: block;
+    }
+
+    .stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      padding: 8px 20px 16px;
+    }
+
+    .workspace {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      transition: transform 0.45s ease;
+    }
+
+    .preview-move {
+      position: absolute;
+      z-index: 6;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .move-mark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 7;
+      width: 168px;
+      height: 112px;
+      object-fit: contain;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .preview-move.traveling .card,
+    .preview-move.traveling .pdf-frame,
+    .preview-move.traveling .embed-pane {
+      overflow: hidden;
+    }
+
+    .preview-move.traveling .card > * {
+      visibility: hidden;
+    }
+
+    .move-mark.on {
+      animation: move-mark 0.45s linear forwards;
+    }
+
+    @keyframes move-mark {
+      0% { opacity: 0; transform: translate(-50%, -50%); }
+      16% { opacity: 1; transform: translate(-50%, -50%); }
+      84% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -50%); }
+    }
+
+    .upload-mark {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      line-height: 0;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+
+    .upload-mark img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.16s ease, filter 0.16s ease;
+    }
+
+    .upload-mark:hover img {
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 8px rgba(110, 184, 232, 0.7)) brightness(1.08);
+    }
+
+    .doc-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .gear {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .gear:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .tip { position: relative; }
+
+    .tip::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 6px);
+      z-index: 5;
+      transform: translateX(-50%) translateY(-4px);
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      background: rgba(16, 22, 32, 0.92);
+      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .tip:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .doc-loading {
+      flex: 1 1 auto;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .doc-loading img {
+      width: 42px;
+      height: 42px;
+      transform-origin: center;
+      animation: settings-pulse 0.5s linear forwards;
+    }
+
+    @keyframes settings-pulse {
+      0% { transform: scale(1); }
+      12.5% { transform: scale(1.57); }
+      25% { transform: scale(2.06); }
+      37.5% { transform: scale(2.39); }
+      50% { transform: scale(2.5); }
+      62.5% { transform: scale(2.39); }
+      75% { transform: scale(2.06); }
+      87.5% { transform: scale(1.57); }
+      100% { transform: scale(1); }
+    }
+
+    .config-head {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .eye {
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+      display: inline-grid;
+      place-items: center;
+      cursor: default;
+    }
+
+    .eye:hover { color: var(--ink); }
+    .eye svg { display: block; }
+
+    .eye.tip::after {
+      left: 0;
+      transform: translateY(-4px);
+    }
+
+    .eye.tip:hover::after {
+      transform: translateY(0);
+    }
+
+    .doc-col {
+      width: var(--docs-w);
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .query-row {
+      display: flex;
+      align-items: flex-start;
+      flex: 0 0 auto;
+    }
+    .workspace.with-lower .query-row { margin-top: 18px; }
+
+    .panel {
+      width: 0;
+      min-width: 0;
+      flex: 0 0 auto;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateX(18px);
+      pointer-events: none;
+      transition: width 0.45s ease, height 0.45s ease, opacity 0.35s ease, transform 0.45s ease, margin 0.45s ease;
+    }
+
+    .panel.open {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+      overflow: visible;
+    }
+
+    .panel.docs {
+      width: var(--docs-w);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel.chunks.open,
+    .panel.chunking.open { width: 480px; margin-left: 16px; max-height: 100%; }
+    .workspace.with-lower .panel.chunks.open,
+    .workspace.with-lower .panel.chunking.open {
+      max-height: calc(100% - var(--lower-h) - 18px);
+    }
+    .panel.query,
+    .panel.results,
+    .panel.preview { height: 0; }
+    .panel.query.open,
+    .panel.results.open,
+    .panel.preview.open {
+      width: var(--lower-w);
+      height: var(--lower-h);
+    }
+    .panel.results.open { width: calc(var(--lower-w) * 2); }
+    .panel.results.open,
+    .panel.preview.open { margin-left: 16px; }
+
+    .panel.chunks.open,
+    .panel.chunking.open,
+    .panel.results.open,
+    .panel.preview.open { position: relative; }
+
+    .panel.chunks.open::before,
+    .panel.chunking.open::before,
+    .panel.results.open::before,
+    .panel.preview.open::before {
+      content: "";
+      position: absolute;
+      left: -11px;
+      top: 50%;
+      z-index: 3;
+      width: 3px;
+      height: 140px;
+      transform: translateY(-50%);
+      border-radius: 3px;
+      background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+      pointer-events: none;
+    }
+
+    .query-row { position: relative; }
+    .workspace.with-lower .query-row::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: -11px;
+      width: var(--lower-w);
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+      pointer-events: none;
+    }
+
+    .card {
+      width: inherit;
+      min-width: 100%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 10px 30px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+    }
+
+    .panel.docs .card,
+    .panel.chunks.open .card,
+    .panel.chunking.open .card,
+    .panel.query.open .card,
+    .panel.results.open .card,
+    .panel.preview.open .card {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel.docs .card,
+    .panel.chunks.open .card,
+    .panel.chunking.open .card,
+    .panel.query.open .card,
+    .panel.results.open .card,
+    .panel.preview.open .card {
+      max-height: 100%;
+    }
+
+    .panel.query.open .card,
+    .panel.results.open .card,
+    .panel.preview.open .card { height: 100%; }
+
+    .list-scroll,
+    .fields,
+    .pdf-frame {
+      overflow: auto;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .list-scroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(22, 28, 40, 0.88);
+      backdrop-filter: blur(12px);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mark {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .doc-count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.7em;
+      height: 1.45em;
+      margin-left: 8px;
+      padding: 0 7px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 1;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      vertical-align: 1px;
+    }
+
+    .card-head,
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-head { padding: 14px 16px 0; }
+    .panel.results .card-head { padding-bottom: 14px; }
+
+    .x {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .x:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+    }
+
+    input[type="search"],
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+
+    button.solid,
+    .menu-pop button {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    button.solid:hover {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.46);
+      color: #fff;
+    }
+
+    button.solid:disabled {
+      opacity: 0.38;
+      cursor: default;
+      color: var(--muted);
+    }
+
+    button.solid:disabled:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: var(--muted);
+    }
+
+    button.solid.chunk-go:hover {
+      background: rgba(226, 177, 90, 0.42);
+      border-color: #f0cb7a;
+      color: #fff6e4;
+    }
+
+    .docs.drag {
+      outline: 2px dashed rgba(255, 255, 255, 0.45);
+      outline-offset: -8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--faint);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    th.sort { padding: 0; }
+    th.sort.on { color: var(--accent); }
+    button.sort-btn {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 4px;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      text-align: left;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    button.sort-btn:hover { color: var(--ink); }
+    th.sort .arrow { font-size: 10px; line-height: 1; }
+
+    tbody tr { cursor: pointer; }
+    tbody tr:hover, tr.active { background: rgba(255, 255, 255, 0.06); }
+
+    .name { font-weight: 600; }
+    th.status-cell,
+    td.status-cell {
+      width: 132px;
+      text-align: left;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status.ready { color: #8fbf7a; }
+    .status.chunked { color: #5ec8c5; }
+    .status.processing { color: #e2b15a; }
+    .status.embedding { color: #d48ad4; }
+    .status.chunking { color: #e08a5a; }
+    .status.processed,
+    .status.wait { color: var(--faint); }
+    .status .spin {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      border: 1.5px solid color-mix(in srgb, currentColor 35%, transparent);
+      border-top-color: currentColor;
+      animation: status-spin 0.8s linear infinite;
+    }
+    @keyframes status-spin { to { transform: rotate(360deg); } }
+    .status .load {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+      object-fit: contain;
+      transform-origin: center;
+      animation: load-spin 3s linear infinite;
+    }
+    @keyframes load-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .menu { position: relative; }
+    .menu > summary {
+      list-style: none;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+    .menu > summary::-webkit-details-marker { display: none; }
+    .menu > summary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--ink);
+    }
+    .menu-pop {
+      position: absolute;
+      right: 0;
+      top: 36px;
+      z-index: 5;
+      display: grid;
+      gap: 4px;
+      min-width: 140px;
+      padding: 6px;
+      background: rgba(16, 22, 32, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+    }
+    .menu-pop.floating {
+      position: fixed;
+      right: auto;
+      top: auto;
+      z-index: 40;
+    }
+    .menu-pop button {
+      text-align: left;
+      background: transparent;
+    }
+
+    .menu-pop button:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.4);
+      color: #fff;
+    }
+
+    .empty {
+      padding: 36px 16px 42px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid var(--faint);
+      display: grid;
+      place-items: center;
+      color: transparent;
+      font-size: 13px;
+    }
+    .check.on {
+      border-color: var(--good);
+      background: rgba(143, 191, 122, 0.16);
+      color: var(--good);
+    }
+
+    .chunks table { table-layout: fixed; }
+    .chunks th:nth-child(1), .chunks td:nth-child(1) { width: 64px; }
+    .chunks th:nth-child(2), .chunks td:nth-child(2) { width: 72px; }
+    .chunks th:nth-child(4), .chunks td:nth-child(4) { width: 112px; }
+    .chunks th.embed-col .sort-btn { justify-content: center; text-align: center; }
+    .chunks td:nth-child(4) .check { margin: 0 auto; }
+
+    .snippet {
+      max-width: 220px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vector {
+      margin: 12px 16px 16px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #d5e2f2;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      word-break: break-word;
+    }
+
+    .fields {
+      display: grid;
+      gap: 10px;
+      padding: 12px 16px 16px;
+      align-content: start;
+    }
+
+    .panel.docs .fields label {
+      align-content: start;
+      align-items: start;
+      gap: 4px;
+    }
+
+    .panel.docs .fields select {
+      height: 32px;
+      padding: 2px 10px;
+      align-self: start;
+    }
+
+    label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+
+    .action-cell { width: 96px; white-space: nowrap; }
+    button.row-action {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 4px 10px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    button.row-action:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.42);
+      color: #fff;
+    }
+    button.row-action.chunk {
+      background: rgba(226, 177, 90, 0.24);
+      border-color: #e2b15a;
+      color: #f6e2b8;
+    }
+    button.row-action.chunk:hover {
+      background: rgba(226, 177, 90, 0.48);
+      border-color: #f0cb7a;
+      color: #fff6e4;
+    }
+    button.row-action.query {
+      background: rgba(110, 168, 214, 0.24);
+      border-color: #6ea8d6;
+      color: #d5e8f8;
+    }
+    button.row-action.query:hover {
+      background: rgba(110, 168, 214, 0.48);
+      border-color: #9ec8ea;
+      color: #f4faff;
+    }
+
+    .pdf-frame canvas + canvas { margin-top: 12px; }
+
+    .card.group-a {
+      border-color: rgba(94, 200, 197, 0.55);
+      background: linear-gradient(180deg, rgba(94, 200, 197, 0.16), rgba(255, 255, 255, 0.05));
+      box-shadow: inset 0 1px 0 rgba(94, 200, 197, 0.4), 0 10px 30px rgba(0, 0, 0, 0.22);
+    }
+    .card.group-b {
+      border-color: rgba(110, 168, 214, 0.62);
+      background: linear-gradient(180deg, rgba(110, 168, 214, 0.16), rgba(255, 255, 255, 0.05));
+      box-shadow: inset 0 1px 0 rgba(110, 168, 214, 0.42), 0 10px 30px rgba(0, 0, 0, 0.22);
+    }
+    .panel.group-a.open::before {
+      background: linear-gradient(180deg, transparent, rgba(94, 200, 197, 0.95), transparent);
+    }
+    .panel.group-b.open::before {
+      background: linear-gradient(180deg, transparent, rgba(110, 168, 214, 0.95), transparent);
+    }
+    .tabs { display: flex; gap: 6px; }
+    .tabs button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tabs button {
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .tabs button:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .tabs button.on {
+      color: var(--ink);
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .tabs button.on:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.42);
+    }
+    .field-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .metric-flip {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin: 0;
+      padding: 2px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+    }
+    .metric-flip:hover { background: rgba(255, 255, 255, 0.06); }
+    .flip-ico {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: var(--faint);
+    }
+    .flip-ico svg { display: block; }
+    .flip-ico.on {
+      color: #7ee0d2;
+      background: rgba(94, 200, 197, 0.18);
+    }
+    .metric-flip:hover .flip-ico.on {
+      color: #d8fff6;
+      background: rgba(94, 200, 197, 0.32);
+    }
+    .doc-tokens {
+      margin: 2px 16px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .doc-tokens-value {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #7ee0d2;
+    }
+    .doc-tokens-word {
+      margin-left: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e7c27a;
+    }
+    .chunk-readout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 2px 0 0;
+      padding: 14px 8px 12px;
+      border-radius: 14px;
+      background: rgba(94, 200, 197, 0.1);
+      border: 1px solid rgba(94, 200, 197, 0.32);
+    }
+    .readout-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+    .readout-num {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .readout-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #7ee0d2;
+    }
+    .readout-stat.bad .readout-num { color: #e2b15a; }
+    .readout-stat.bad .readout-lbl { color: #e7c27a; }
+    .tab-pane { display: none; min-height: 0; }
+    .tab-pane.on { display: flex; flex-direction: column; flex: 1 1 auto; }
+    .embed-pane { overflow: auto; }
+
+    .panel.results {
+      --rank-w: 56px;
+      --score-w: 64px;
+      --chunk-w: 76px;
+    }
+    .panel.results.hybrid { --score-w: 156px; }
+    .panel.results table { table-layout: fixed; }
+    .panel.results thead th:nth-child(1) { width: var(--rank-w); }
+    .panel.results thead th:nth-child(3) { width: var(--score-w); }
+    .panel.results thead th:nth-child(4) { width: var(--chunk-w); }
+    .panel.results th.chunk-col .sort-btn {
+      justify-content: center;
+      text-align: center;
+    }
+    .panel.results td.result-wrap { padding: 0; }
+    .result { cursor: pointer; }
+    .result-line {
+      display: grid;
+      grid-template-columns: var(--rank-w) minmax(0, 1fr) var(--score-w) var(--chunk-w);
+      align-items: center;
+    }
+    .result-line > span { padding: 10px 12px; min-width: 0; }
+    .result-line .chunk-col { text-align: center; }
+    .score-num { font-variant-numeric: tabular-nums; }
+    .score-trio {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .score-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .score-line .k {
+      font-family: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
+      font-style: italic;
+      font-size: 12px;
+      color: inherit;
+    }
+    .score-line.bm25 { color: #e2b15a; }
+    .score-line.dense { color: #5ec8c5; }
+    .score-line.rrf { color: #d48ad4; }
+    .mode-mark {
+      font-family: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
+      font-style: italic;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+      color: #d7e7f8;
+      padding: 2px 11px 3px;
+      border-radius: 999px;
+      background: rgba(126, 168, 214, 0.18);
+      border: 1px solid rgba(176, 206, 236, 0.4);
+    }
+    .result-expand {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.32s ease;
+    }
+    .result-expand.open { grid-template-rows: 1fr; }
+    .result-expand-inner { overflow: hidden; min-height: 0; }
+    .full {
+      margin: 0 12px 12px;
+      color: var(--muted);
+    }
+
+    .pdf-frame { padding: 12px 16px 16px; }
+    .pdf-frame canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .chunk-empty { padding: 20px 16px 24px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="ragatoni-logo.png" alt="Ragatoni" />
+  </header>
+  <main class="stage" id="app"></main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    const embeddingModels = [
+      { id: 1, name: "text-embedding-3-small", provider: "openai", dimension: 1536, maxInputTokens: 8191 },
+      { id: 2, name: "text-embedding-3-large", provider: "openai", dimension: 3072, maxInputTokens: 8191 },
+      { id: 3, name: "voyage-3", provider: "voyage", dimension: 1024, maxInputTokens: 32000 }
+    ];
+
+    const pdfLibraries = [
+      { id: "pymupdf", name: "PyMuPDF" },
+      { id: "pyplumber", name: "PyPlumber" }
+    ];
+
+    const session = {
+      preferences: { embedding_model_id: 1, pdf_library: "pymupdf" }
+    };
+
+    function selectedEmbeddingModel() {
+      return embeddingModels.find((model) => model.id === session.preferences.embedding_model_id) || embeddingModels[0];
+    }
+
+    const passages = [
+      ["Olive oil warms before the onion, carrot, and celery go in.", "The soffritto should soften and turn sweet, not brown too fast."],
+      ["Brown the meat in batches so the pot stays hot.", "Crowding the pan steams the pieces instead of searing them."],
+      ["Simmer uncovered until the sauce coats a spoon.", "The fat gathers at the edge and the tomatoes turn deep red."],
+      ["Salt the pasta water until it tastes like the sea.", "The noodles finish in the sauce with a splash of that water."],
+      ["Fold in the basil off the heat so it stays bright.", "A last thread of oil makes the surface shine."]
+    ];
+
+    function vectorFor(index) {
+      const values = [0.012, -0.084, 0.331, 0.057, -0.119, 0.204, -0.043, 0.176].map(
+        (n, i) => (n + index * 0.01 * (i % 2 === 0 ? 1 : -1)).toFixed(3)
+      );
+      return "[" + values.join(", ") + ", …]";
+    }
+
+    function makeChunks(seed, count, embeddedUntil) {
+      return Array.from({ length: count }, (_, index) => {
+        const pair = passages[(seed + index) % passages.length];
+        return {
+          index,
+          tokens: 140 + ((seed + index) * 37) % 120,
+          preview: pair[0],
+          full: pair[0] + " " + pair[1],
+          embedded: index < embeddedUntil,
+          page: (index % 5) + 1,
+          pages: index % 2 === 1 ? [(index % 5) + 1, (index % 5) + 2] : [(index % 5) + 1],
+          model: selectedEmbeddingModel().name,
+          vector: vectorFor(index)
+        };
+      });
+    }
+
+    let nextId = 11;
+    let uploadCount = 1;
+    const docs = [
+      { id: 1, name: "pantry-notes.pdf", size: "420 KB", uploaded: "2026-11-01", status: "processed", tokens: 8420, chunks: [] },
+      { id: 2, name: "soup-stock.pdf", size: "1.1 MB", uploaded: "2026-11-02", status: "processing", chunks: [] },
+      { id: 3, name: "weeknight-sauce.pdf", size: "860 KB", uploaded: "2026-11-03", status: "chunked", chunks: makeChunks(1, 4, 0) },
+      { id: 4, name: "bread-schedule.pdf", size: "2.4 MB", uploaded: "2026-11-04", status: "embedding", chunks: makeChunks(2, 5, 3) },
+      { id: 5, name: "sunday-gravy.pdf", size: "3.0 MB", uploaded: "2026-11-05", status: "ready", chunks: makeChunks(3, 5, 5) },
+      { id: 6, name: "tomato-passata.pdf", size: "640 KB", uploaded: "2026-11-06", status: "chunked", chunks: makeChunks(4, 3, 1) },
+      { id: 7, name: "pasta-water.pdf", size: "210 KB", uploaded: "2026-11-07", status: "processed", tokens: 4180, chunks: [] },
+      { id: 8, name: "olive-oil.pdf", size: "1.8 MB", uploaded: "2026-11-08", status: "ready", chunks: makeChunks(5, 4, 4) },
+      { id: 9, name: "focaccia.pdf", size: "990 KB", uploaded: "2026-11-09", status: "processed", tokens: 19640, chunks: [] },
+      { id: 10, name: "salt-box.pdf", size: "150 KB", uploaded: "2026-11-10", status: "chunked", chunks: makeChunks(6, 3, 0) }
+    ];
+
+    const state = {
+      search: "",
+      selectedId: null,
+      embeddingIndex: null,
+      queryDocId: null,
+      form: { q: "", retrieval: "naive", topk: "5", threshold: "0.2" },
+      results: null,
+      chunkingId: null,
+      chunkForm: { size: "100", overlap: "30", metric: "tokens" },
+      preview: null,
+      previewSlot: null,
+      previewTab: "preview",
+      expandedRank: null,
+      resultMotion: null,
+      renamingId: null,
+      drag: false,
+      docsView: "documents",
+      settingsDraft: { embedding_model_id: "1", pdf_library: "pymupdf" },
+      docsWait: null,
+      sort: {
+        docs: { key: "", dir: 1 },
+        chunks: { key: "", dir: 1 },
+        results: { key: "", dir: 1 }
+      }
+    };
+    let docsHold = null;
+
+    const app = document.getElementById("app");
+    const shell = { chunks: false, chunking: false, query: false, results: false, preview: false };
+    const shown = { chunks: false, chunking: false, query: false, results: false, preview: false };
+    const cache = { chunks: "", chunking: "", query: "", results: "", preview: "" };
+    let previewHome = "lower";
+    let previewMotion = false;
+    let workspaceShift = 0;
+
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+    let pdfTask = null;
+
+    function docById(id) {
+      return docs.find((doc) => doc.id === id) || null;
+    }
+
+    function pagesOf(item) {
+      if (item && Array.isArray(item.pages) && item.pages.length) return item.pages.map(Number);
+      const page = Number(item && item.page) || 1;
+      return [page];
+    }
+
+    function closeQuery() {
+      state.queryDocId = null;
+      state.results = null;
+      state.expandedRank = null;
+      if (state.previewSlot !== "side") {
+        state.preview = null;
+        state.previewSlot = null;
+      }
+    }
+
+    function selectDoc(id) {
+      state.chunkingId = null;
+      if (state.selectedId !== id) {
+        closeQuery();
+        state.embeddingIndex = null;
+        state.preview = null;
+        state.previewSlot = null;
+      }
+      state.selectedId = id;
+      render();
+    }
+
+    function closeChunks() {
+      state.selectedId = null;
+      state.embeddingIndex = null;
+      if (state.previewSlot === "side") {
+        state.preview = null;
+        state.previewSlot = null;
+      }
+      render();
+    }
+
+    function addDummy(name) {
+      docs.push({
+        id: nextId++,
+        name: name || "upload-" + uploadCount++ + ".pdf",
+        size: "300 KB",
+        uploaded: "2026-11-12",
+        status: "processed",
+        tokens: 6200,
+        chunks: []
+      });
+      render();
+    }
+
+    function openChunking(id) {
+      const doc = docById(id);
+      if (!doc || doc.status !== "processed") return;
+      state.chunkingId = id;
+      state.selectedId = null;
+      state.embeddingIndex = null;
+      if (state.previewSlot === "side") {
+        state.preview = null;
+        state.previewSlot = null;
+      }
+      render();
+    }
+
+    function closeChunking() {
+      state.chunkingId = null;
+      render();
+    }
+
+    function chunkDoc(id) {
+      const doc = docById(id);
+      if (!doc || doc.status !== "processed" || doc.chunks.length > 0) return;
+      doc.status = "chunking";
+      state.chunkingId = null;
+      render();
+      window.setTimeout(() => {
+        const current = docById(id);
+        if (!current || current.status !== "chunking" || current.chunks.length > 0) return;
+        current.status = "chunked";
+        current.chunks = makeChunks(id, 3 + (id % 3), id % 2 === 0 ? 2 : 0);
+        render();
+      }, 700);
+    }
+
+    function runQuery(form) {
+      const doc = docById(state.queryDocId);
+      if (!doc || doc.status !== "ready") return;
+      const data = new FormData(form);
+      const retrieval = data.get("retrieval");
+      const topK = Math.max(1, Number(data.get("topk")) || 1);
+      const threshold = Number(data.get("threshold"));
+      const question = String(data.get("q") || "").trim();
+      if (!question) return;
+      state.form = {
+        q: question,
+        retrieval,
+        topk: String(data.get("topk") || "5"),
+        threshold: String(data.get("threshold") || "0.2")
+      };
+      const hybrid = retrieval === "hybrid";
+      let rows = doc.chunks.map((chunk) => {
+        const dense = Math.round((0.9 - chunk.index * 0.12) * 100) / 100;
+        const bm25 = Math.round((0.66 + ((chunk.index % 3) - 1) * 0.18) * 100) / 100;
+        const rrf = Math.round((0.93 - chunk.index * 0.11) * 100) / 100;
+        return hybrid
+          ? { ...chunk, bm25: Math.max(0.1, bm25), dense: Math.max(0.1, dense), score: Math.max(0.15, rrf) }
+          : { ...chunk, score: Math.max(0.15, rrf) };
+      });
+      rows = rows.filter((row) => row.score >= threshold).sort((a, b) => b.score - a.score).slice(0, topK);
+      rows = rows.map((row, index) => ({ ...row, rank: index + 1 }));
+      state.results = {
+        question,
+        retrieval,
+        rows
+      };
+      state.preview = null;
+      state.previewSlot = null;
+      state.expandedRank = null;
+      render();
+    }
+
+    function previewFrom(item) {
+      return {
+        pages: pagesOf(item),
+        embedded: !!(item && item.embedded),
+        model: item && item.model ? item.model : "",
+        vector: item && item.vector ? item.vector : ""
+      };
+    }
+
+    function previewBoxWidth() {
+      const probe = document.createElement("div");
+      probe.style.cssText = "position:absolute;visibility:hidden;width:var(--lower-w);";
+      document.body.appendChild(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    }
+
+    function fitWorkspace(workspace) {
+      if (!workspace) return;
+      const chunks = workspace.querySelector(".panel.chunks.open");
+      const previous = workspaceShift;
+      workspace.style.transition = "none";
+      workspace.style.transform = "translateX(0px)";
+      let next = 0;
+      if (state.preview && chunks) {
+        const room = workspace.getBoundingClientRect();
+        const docs = workspace.querySelector(".panel.docs");
+        const edge = chunks.getBoundingClientRect().right + previewBoxWidth() + 16;
+        const overflow = Math.ceil(edge - (room.right - 8));
+        const roomLeft = docs ? Math.max(0, docs.getBoundingClientRect().left - room.left - 8) : overflow;
+        next = Math.max(0, Math.min(overflow, roomLeft));
+      }
+      workspace.style.transform = "translateX(" + (-previous) + "px)";
+      workspaceShift = next;
+      requestAnimationFrame(() => {
+        const live = document.querySelector(".workspace");
+        if (!live) return;
+        live.style.transition = "transform 0.45s ease";
+        live.style.transform = "translateX(" + (-next) + "px)";
+      });
+    }
+
+    function placePreview(move) {
+      if (!move) return;
+      const workspace = move.closest(".workspace");
+      const anchor = document.querySelector(previewHome === "side" ? ".panel.chunks.open" : ".panel.results.open");
+      if (!workspace || !anchor) return;
+      const ws = workspace.getBoundingClientRect();
+      const rect = anchor.getBoundingClientRect();
+      move.style.left = (rect.right - ws.left) + "px";
+      move.style.top = (rect.top - ws.top) + "px";
+    }
+
+    function docsBody(visible) {
+      if (state.docsView === "loading") {
+        return `<div class="doc-loading"><img src="loading.png" alt="" /></div>`;
+      }
+      if (state.docsView === "settings") {
+        const modelOptions = embeddingModels.map((model) => {
+          const selected = String(model.id) === String(state.settingsDraft.embedding_model_id) ? " selected" : "";
+          return `<option value="${model.id}"${selected}>${escapeHtml(model.name)} — ${escapeHtml(model.provider)}</option>`;
+        }).join("");
+        const libraryOptions = pdfLibraries.map((library) => {
+          const selected = library.id === state.settingsDraft.pdf_library ? " selected" : "";
+          return `<option value="${library.id}"${selected}>${escapeHtml(library.name)}</option>`;
+        }).join("");
+        const eye = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.8 12s2.35-3.6 6.2-3.6 6.2 3.6 6.2 3.6-2.35 3.6-6.2 3.6S5.8 12 5.8 12z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="1.55" fill="currentColor"/></svg>`;
+        const field = (label, tip, control) => `
+          <label>
+            <span class="config-head"><span>${escapeHtml(label)}</span><span class="tip eye" data-tip="${escapeAttr(tip)}" aria-label="${escapeAttr(tip)}">${eye}</span></span>
+            ${control}
+          </label>`;
+        return `
+          <div class="card-head">
+            <h2>Settings</h2>
+            <button class="solid" type="button" id="save-settings">Save</button>
+          </div>
+          <div class="fields">
+            ${field("Embedding model", "Used for every document when it is embedded.", `<select id="embedding-model">${modelOptions}</select>`)}
+            ${field("PDF library", "Used for every document when the PDF is extracted.", `<select id="pdf-library">${libraryOptions}</select>`)}
+          </div>
+        `;
+      }
+      const gear = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96c-.52-.4-1.08-.73-1.69-.98l-.36-2.54a.5.5 0 0 0-.49-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.61.25-1.17.59-1.69.98l-2.39-.96a.5.5 0 0 0-.61.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.61.22l2.39-.96c.52.4 1.08.73 1.69.98l.36 2.54c.05.24.26.42.49.42h3.84c.24 0 .44-.17.49-.42l.36-2.54c.61-.25 1.17-.59 1.69-.98l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>`;
+      return `
+        <div class="card-head">
+          <h2><img class="mark" src="document.png" alt="" />Documents <span class="doc-count">${docs.length}</span></h2>
+          <div class="doc-actions">
+            <button class="gear tip" type="button" id="docs-gear" data-tip="Settings" aria-label="Settings">${gear}</button>
+            <button class="upload-mark tip" type="button" id="upload-btn" data-tip="Upload" aria-label="Upload"><img src="upload.png" alt="" /></button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <input id="doc-search" type="search" placeholder="Search documents" value="${escapeAttr(state.search)}" />
+        </div>
+        <div class="list-scroll">
+          ${docs.length === 0 ? `<p class="empty">upload your first document.</p>` : tableHtml(visible)}
+        </div>
+      `;
+    }
+
+    function holdDocsCard() {
+      if (docsHold) return;
+      const card = document.querySelector(".panel.docs .card");
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      docsHold = { width: Math.round(rect.width), height: Math.round(rect.height) };
+    }
+
+    function showDocsAfterWait(next) {
+      holdDocsCard();
+      state.docsView = "loading";
+      const token = {};
+      state.docsWait = token;
+      render();
+      window.setTimeout(() => {
+        if (state.docsWait !== token) return;
+        state.docsWait = null;
+        if (next === "settings") {
+          state.settingsDraft = {
+            embedding_model_id: String(session.preferences.embedding_model_id),
+            pdf_library: session.preferences.pdf_library
+          };
+          state.docsView = "settings";
+        } else {
+          state.docsView = "documents";
+          docsHold = null;
+        }
+        render();
+      }, 500);
+    }
+
+    function panelWanted(selected, queryDoc) {
+      const chunkingDoc = docById(state.chunkingId);
+      return {
+        chunks: !!selected,
+        chunking: !!(chunkingDoc && chunkingDoc.status === "processed"),
+        query: !!queryDoc,
+        results: !!state.results,
+        preview: !!state.preview
+      };
+    }
+
+    function render() {
+      document.querySelectorAll(".menu-pop.floating").forEach((pop) => pop.remove());
+      const movingFrom = previewMotion ? document.querySelector(".preview-move") : null;
+      const fromRect = movingFrom ? movingFrom.getBoundingClientRect() : null;
+      previewMotion = false;
+      const selected = docById(state.selectedId);
+      const queryDoc = docById(state.queryDocId);
+      const needle = state.search.trim().toLowerCase();
+      const visible = docs.filter((doc) => doc.name.toLowerCase().includes(needle));
+      if (state.preview) previewHome = state.previewSlot === "side" ? "side" : "lower";
+      const want = panelWanted(selected, queryDoc);
+      const chunkingDoc = docById(state.chunkingId);
+      if (selected) cache.chunks = chunksHtml(selected);
+      if (chunkingDoc && chunkingDoc.status === "processed") cache.chunking = chunkingHtml(chunkingDoc);
+      if (queryDoc) cache.query = queryHtml(queryDoc);
+      if (state.results) cache.results = resultsHtml(state.results);
+      if (state.preview) cache.preview = previewHtml(state.preview);
+      Object.keys(want).forEach((key) => {
+        if (want[key]) shell[key] = true;
+      });
+      const previewHere = !!shell.preview;
+      const previewGroup = previewHome === "side" ? "group-a" : "group-b";
+      const previewBlock = previewHere
+        ? `<div class="preview-move"><section class="panel preview ${previewGroup} ${shown.preview ? "open" : ""}">${cache.preview}</section><img class="move-mark" src="single.png" alt="" /></div>`
+        : "";
+      const lower = shell.query || shell.results;
+
+      app.innerHTML = `
+        <div class="workspace ${lower ? "with-lower" : ""}">
+          <div class="doc-col">
+            <section class="panel docs open group-a ${state.drag ? "drag" : ""}" id="docs-panel">
+              <div class="card group-a"${docsHold && state.docsView !== "documents" ? ` style="width:${docsHold.width}px;height:${docsHold.height}px"` : ""}>
+                ${docsBody(visible)}
+              </div>
+            </section>
+            <div class="query-row">
+              <section class="panel query group-b ${shown.query ? "open" : ""}">${shell.query ? cache.query : ""}</section>
+              <section class="panel results group-b ${state.results && state.results.retrieval === "hybrid" ? "hybrid" : ""} ${shown.results ? "open" : ""}">${shell.results ? cache.results : ""}</section>
+            </div>
+          </div>
+          <section class="panel chunks group-a ${shown.chunks ? "open" : ""}">${shell.chunks ? cache.chunks : ""}</section>
+          <section class="panel chunking group-a ${shown.chunking ? "open" : ""}">${shell.chunking ? cache.chunking : ""}</section>
+          ${previewBlock}
+        </div>
+      `;
+      const workspace = document.querySelector(".workspace");
+      workspace.style.transition = "none";
+      workspace.style.transform = "translateX(" + (-workspaceShift) + "px)";
+      const nextPreview = document.querySelector(".preview-move");
+      placePreview(nextPreview);
+      if (fromRect && nextPreview) {
+        const to = nextPreview.getBoundingClientRect();
+        const dx = fromRect.left - to.left;
+        const dy = fromRect.top - to.top;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+          nextPreview.classList.add("traveling");
+          const mark = nextPreview.querySelector(".move-mark");
+          if (mark) {
+            mark.classList.remove("on");
+            void mark.offsetWidth;
+            mark.classList.add("on");
+          }
+          const showContent = (event) => {
+            if (event.propertyName !== "transform") return;
+            nextPreview.classList.remove("traveling");
+            nextPreview.removeEventListener("transitionend", showContent);
+          };
+          nextPreview.addEventListener("transitionend", showContent);
+          nextPreview.style.transition = "none";
+          nextPreview.style.transform = "translate(" + dx + "px, " + dy + "px)";
+          nextPreview.getBoundingClientRect();
+          requestAnimationFrame(() => {
+            nextPreview.style.transition = "transform 0.45s ease";
+            nextPreview.style.transform = "translate(0, 0)";
+          });
+        }
+      }
+
+      const search = document.getElementById("doc-search");
+      if (search && document.activeElement !== search && state.keepSearchFocus) {
+        search.focus();
+        const end = search.value.length;
+        search.setSelectionRange(end, end);
+      }
+      state.keepSearchFocus = false;
+
+      const queryQ = document.getElementById("query-q");
+      if (queryQ && state.keepQueryFocus) {
+        queryQ.focus();
+        const end = queryQ.value.length;
+        queryQ.setSelectionRange(end, end);
+      }
+      state.keepQueryFocus = false;
+
+      const rename = document.getElementById("rename-input");
+      if (rename) rename.focus();
+
+      const chunkFocus = state.keepChunkFocus;
+      state.keepChunkFocus = null;
+      if (chunkFocus) {
+        const field = document.getElementById(chunkFocus);
+        if (field) {
+          field.focus();
+          const end = field.value.length;
+          field.setSelectionRange(end, end);
+        }
+      }
+
+      fitWorkspace(workspace);
+
+      requestAnimationFrame(() => {
+        syncPanels(want);
+        playResultMotion();
+        if (want.preview) requestAnimationFrame(paintPdf);
+      });
+    }
+
+    function playResultMotion() {
+      const motion = state.resultMotion;
+      state.resultMotion = null;
+      if (!motion) return;
+      requestAnimationFrame(() => {
+        const live = document.querySelector('.result-expand[data-expand="' + motion.rank + '"]');
+        if (!live) return;
+        if (motion.type === "open") live.classList.add("open");
+        else live.classList.remove("open");
+      });
+    }
+
+    function finishClose(key) {
+      const selectedNow = docById(state.selectedId);
+      if (panelWanted(selectedNow, docById(state.queryDocId))[key]) return;
+      if (!shell[key]) return;
+      shell[key] = false;
+      render();
+    }
+
+    function syncPanels(want) {
+      Object.keys(want).forEach((key) => {
+        const el = document.querySelector(".panel." + key);
+        if (!el) return;
+        if (want[key]) {
+          if (el.classList.contains("open")) {
+            shown[key] = true;
+            return;
+          }
+          requestAnimationFrame(() => {
+            const live = document.querySelector(".panel." + key);
+            if (!live) return;
+            live.classList.add("open");
+            shown[key] = true;
+            if (key === "preview") {
+              paintPdf();
+              const redraw = (event) => {
+                if (event.propertyName !== "width") return;
+                live.removeEventListener("transitionend", redraw);
+                paintPdf();
+              };
+              live.addEventListener("transitionend", redraw);
+            }
+          });
+          return;
+        }
+        if (shown[key] || el.classList.contains("open")) {
+          el.classList.remove("open");
+          shown[key] = false;
+          const done = (event) => {
+            if (event.propertyName !== "width") return;
+            el.removeEventListener("transitionend", done);
+            finishClose(key);
+          };
+          el.addEventListener("transitionend", done);
+          window.setTimeout(() => finishClose(key), 520);
+          return;
+        }
+        if (shell[key]) shell[key] = false;
+      });
+    }
+
+    let paintGen = 0;
+    function paintPdf() {
+      const canvases = [...document.querySelectorAll(".pdf-frame canvas")];
+      if (!canvases.length || !window.pdfjsLib) return;
+      const gen = ++paintGen;
+      if (!pdfTask) pdfTask = pdfjsLib.getDocument("common-sense.pdf").promise;
+      pdfTask.then(async (doc) => {
+        for (const canvas of canvases) {
+          if (gen !== paintGen || !canvas.isConnected) return;
+          const pageNo = Math.min(Math.max(Number(canvas.dataset.page) || 1, 1), doc.numPages);
+          const page = await doc.getPage(pageNo);
+          if (gen !== paintGen || !canvas.isConnected) return;
+          const frame = canvas.parentElement;
+          const maxW = Math.max((frame ? frame.clientWidth : 280) - 8, 80);
+          const base = page.getViewport({ scale: 1 });
+          const viewport = page.getViewport({ scale: maxW / base.width });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+        }
+      }).catch(() => {});
+    }
+
+    function statusTone(status) {
+      if (status === "ready" || status === "chunked" || status === "processing" || status === "chunking" || status === "embedding" || status === "processed") return status;
+      return "wait";
+    }
+
+    function statusHtml(status) {
+      const tone = statusTone(status);
+      const load = status === "processing" || status === "embedding"
+        ? `<img class="load" src="loading.png" alt="" />`
+        : "";
+      const spin = status === "chunking"
+        ? `<span class="spin" aria-hidden="true"></span>`
+        : "";
+      return `<span class="status ${tone}">${load}${spin}${escapeHtml(status)}</span>`;
+    }
+
+    function sizeBytes(size) {
+      const match = String(size).trim().match(/^([\d.]+)\s*([kmgt]?b)?$/i);
+      if (!match) return 0;
+      const n = Number(match[1]);
+      const unit = (match[2] || "b").toLowerCase();
+      const mul = { b: 1, kb: 1024, mb: 1024 ** 2, gb: 1024 ** 3, tb: 1024 ** 4 };
+      return n * (mul[unit] || 1);
+    }
+
+    function sortedCopy(items, sort, valueOf) {
+      if (!sort.key) return items.slice();
+      const dir = sort.dir === -1 ? -1 : 1;
+      return items.slice().sort((a, b) => {
+        const av = valueOf(a, sort.key);
+        const bv = valueOf(b, sort.key);
+        const cmp = typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: "base" });
+        return cmp * dir;
+      });
+    }
+
+    function sortTh(list, key, label, className) {
+      const current = state.sort[list];
+      const active = current.key === key;
+      const classes = ["sort", active ? "on" : "", className || ""].filter(Boolean).join(" ");
+      const arrow = active ? (current.dir === 1 ? "↑" : "↓") : "";
+      const aria = label || "Embedding";
+      return `<th class="${classes}" aria-sort="${active ? (current.dir === 1 ? "ascending" : "descending") : "none"}"><button type="button" class="sort-btn" data-sort-list="${list}" data-sort-key="${key}" aria-label="Sort by ${escapeAttr(aria)}">${label ? escapeHtml(label) : ""}${arrow ? `<span class="arrow" aria-hidden="true">${arrow}</span>` : ""}</button></th>`;
+    }
+
+    function tableHtml(visible) {
+      if (visible.length === 0) {
+        return `<p class="empty">No documents match.</p>`;
+      }
+      const ordered = sortedCopy(visible, state.sort.docs, (doc, key) => key === "size" ? sizeBytes(doc.size) : doc[key] || "");
+      return `
+        <table>
+          <thead>
+            <tr>
+              ${sortTh("docs", "name", "Name")}
+              ${sortTh("docs", "status", "Status", "status-cell")}
+              ${sortTh("docs", "size", "Size")}
+              ${sortTh("docs", "uploaded", "Upload date")}
+              <th>Action</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ordered.map((doc) => `
+              <tr class="${doc.id === state.selectedId ? "active" : ""}" data-doc="${doc.id}">
+                <td>
+                  ${state.renamingId === doc.id
+                    ? `<input id="rename-input" type="text" value="${escapeAttr(doc.name)}" data-rename="${doc.id}" />`
+                    : `<span class="name">${escapeHtml(doc.name)}</span>`}
+                </td>
+                <td class="status-cell">${statusHtml(doc.status)}</td>
+                <td>${escapeHtml(doc.size)}</td>
+                <td>${escapeHtml(doc.uploaded)}</td>
+                <td class="action-cell">${actionHtml(doc)}</td>
+                <td>${menuHtml(doc)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function actionHtml(doc) {
+      if (doc.status === "processed") {
+        return `<button type="button" class="row-action chunk" data-action="chunk" data-id="${doc.id}">Chunk</button>`;
+      }
+      if (doc.status === "ready") {
+        return `<button type="button" class="row-action query" data-action="query" data-id="${doc.id}">Query</button>`;
+      }
+      return "";
+    }
+
+    function menuHtml(doc) {
+      return `
+        <details class="menu">
+          <summary aria-label="Actions for ${escapeAttr(doc.name)}">⋯</summary>
+          <div class="menu-pop">
+            <button type="button" data-action="delete" data-id="${doc.id}">Delete</button>
+            <button type="button" data-action="edit" data-id="${doc.id}">Edit</button>
+          </div>
+        </details>
+      `;
+    }
+
+    function overlapTokens(size, overlap, metric) {
+      if (metric === "percent") return size * (overlap / 100);
+      return overlap;
+    }
+
+    function plannedChunkCount(total, size, overlap) {
+      if (!(total > 0) || !(size > 0) || overlap < 0 || overlap >= size) return null;
+      const step = size - overlap;
+      let count = 0;
+      let start = 0;
+      while (start < total && count < 100000) {
+        const end = Math.min(start + size, total);
+        count += 1;
+        if (end === total) break;
+        start += step;
+      }
+      return count;
+    }
+
+    function chunkingHtml(doc) {
+      const form = state.chunkForm;
+      const total = Number(doc.tokens) || 0;
+      const size = Number(form.size);
+      const overlapInput = Number(form.overlap);
+      const metric = form.metric === "percent" ? "percent" : "tokens";
+      const overlap = overlapTokens(size, overlapInput, metric);
+      const count = plannedChunkCount(total, size, overlap);
+      const overlapDisplay = Number.isFinite(overlapInput)
+        ? (metric === "percent" ? overlapInput + "%" : String(overlapInput))
+        : "—";
+      const overlapLabel = metric === "percent" ? "percent" : "tokens";
+      let chunkDisplay = "—";
+      let chunkLabel = "chunks";
+      let chunkBad = true;
+      if (!(size > 0)) chunkLabel = "set size";
+      else if (count === null) chunkLabel = "too large";
+      else {
+        chunkDisplay = count.toLocaleString();
+        chunkLabel = count === 1 ? "chunk" : "chunks";
+        chunkBad = false;
+      }
+      const metricLabel = metric === "percent"
+        ? "Overlap is a percent of the chunk size. Click to use tokens."
+        : "Overlap is in tokens. Click to use a percent.";
+      const coin = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.35" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.6"/><path d="M8.3 9.15h7.4M12 9.15v6.15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+      const percent = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="7.6" cy="7.6" r="2.15" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="16.4" cy="16.4" r="2.15" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M17.2 6.6 6.8 17.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+      return `
+        <div class="card group-a">
+          <div class="card-head">
+            <h2><img class="mark" src="chunks.png" alt="" />Create chunks</h2>
+            <button class="x" type="button" id="close-chunking" aria-label="Close create chunks">×</button>
+          </div>
+          <p class="doc-tokens"><span class="doc-tokens-value">${total.toLocaleString()}</span> <span class="doc-tokens-word">tokens</span> in this document.</p>
+          <div class="fields">
+            <label>Tokens per chunk
+              <input id="chunk-size" type="number" min="1" step="1" value="${escapeAttr(form.size)}" />
+            </label>
+            <label>
+              <span class="field-head">
+                <span>Overlap</span>
+                <button type="button" class="metric-flip" id="overlap-metric" aria-pressed="${metric === "percent"}" aria-label="${escapeAttr(metricLabel)}">
+                  <span class="flip-ico ${metric === "tokens" ? "on" : ""}">${coin}</span>
+                  <span class="flip-ico ${metric === "percent" ? "on" : ""}">${percent}</span>
+                </button>
+              </span>
+              <input id="chunk-overlap" type="number" min="0" step="1" value="${escapeAttr(form.overlap)}" />
+            </label>
+            <div class="chunk-readout" aria-live="polite">
+              <div class="readout-stat ${chunkBad ? "bad" : ""}">
+                <span class="readout-num">${escapeHtml(chunkDisplay)}</span>
+                <span class="readout-lbl">${escapeHtml(chunkLabel)}</span>
+              </div>
+              <div class="readout-stat">
+                <span class="readout-num">${escapeHtml(overlapDisplay)}</span>
+                <span class="readout-lbl">${escapeHtml(overlapLabel)}</span>
+              </div>
+            </div>
+            <button class="solid chunk-go" type="button" id="start-chunking">Create chunks</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function chunksHtml(doc) {
+      const ordered = sortedCopy(doc.chunks, state.sort.chunks, (chunk, key) => key === "embedded" ? (chunk.embedded ? 1 : 0) : chunk[key]);
+      const rows = doc.chunks.length
+        ? `<table>
+            <thead><tr>
+              ${sortTh("chunks", "index", "Index")}
+              ${sortTh("chunks", "tokens", "Tokens")}
+              ${sortTh("chunks", "preview", "Preview")}
+              ${sortTh("chunks", "embedded", "Embedded", "embed-col")}
+            </tr></thead>
+            <tbody>
+              ${ordered.map((chunk) => `
+                <tr data-chunk="${chunk.index}" data-embedded="${chunk.embedded ? "1" : "0"}">
+                  <td>${chunk.index}</td>
+                  <td>${chunk.tokens}</td>
+                  <td><div class="snippet">${escapeHtml(chunk.preview)}</div></td>
+                  <td><span class="check ${chunk.embedded ? "on" : ""}" aria-label="${chunk.embedded ? "Embedded" : "Not embedded"}">✓</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>`
+        : `<p class="chunk-empty">No chunks yet.</p>`;
+      return `
+        <div class="card group-a">
+          <div class="card-head"><h2><img class="mark" src="chunks.png" alt="" />Chunks <span class="doc-count">${doc.chunks.length}</span></h2><button class="x" type="button" id="close-chunks" aria-label="Close chunks">×</button></div>
+          <div class="list-scroll">${rows}</div>
+        </div>
+      `;
+    }
+
+    function queryHtml(doc) {
+      const form = state.form;
+      return `
+        <div class="card group-b">
+          <div class="card-head">
+            <h2><img class="mark" src="search.png" alt="" />Query</h2>
+            <button class="x" type="button" id="close-query" aria-label="Close query">×</button>
+          </div>
+          <form class="fields" id="query-form">
+            <label>Search<input id="query-q" type="text" name="q" value="${escapeAttr(form.q)}" placeholder="Ask about ${escapeAttr(doc.name)}" /></label>
+            <label>Retrieval
+              <select name="retrieval">
+                <option value="naive" ${form.retrieval === "naive" ? "selected" : ""}>naive — semantic</option>
+                <option value="hybrid" ${form.retrieval === "hybrid" ? "selected" : ""}>hybrid — BM25 + semantic</option>
+              </select>
+            </label>
+            <label>Top-K<input type="number" name="topk" min="1" value="${escapeAttr(form.topk)}" /></label>
+            <label>Score threshold<input type="number" name="threshold" min="0" max="1" step="0.01" value="${escapeAttr(form.threshold)}" /></label>
+            <button class="solid" type="submit"${form.q.trim() ? "" : " disabled"}>Search</button>
+          </form>
+        </div>
+      `;
+    }
+
+    function resultsHtml(results) {
+      const hybrid = results.retrieval === "hybrid";
+      const ordered = sortedCopy(results.rows, state.sort.results, (row, key) => {
+        if (key === "text") return row.preview;
+        if (key === "chunk") return row.index;
+        return row[key];
+      });
+      const closingRank = state.resultMotion && state.resultMotion.type === "close" ? state.resultMotion.rank : null;
+      const openingRank = state.resultMotion && state.resultMotion.type === "open" ? state.resultMotion.rank : null;
+      const rows = ordered.length
+        ? ordered.map((row) => {
+            const expanded = state.expandedRank === row.rank || closingRank === row.rank;
+            const startOpen = expanded && openingRank !== row.rank;
+            const score = hybrid
+              ? `<span class="score-trio">
+                  <span class="score-line bm25"><span class="k">BM25</span><span>${row.bm25.toFixed(2)}</span></span>
+                  <span class="score-line dense"><span class="k">dense</span><span>${row.dense.toFixed(2)}</span></span>
+                  <span class="score-line rrf"><span class="k">RRF</span><span>${row.score.toFixed(2)}</span></span>
+                </span>`
+              : `<span class="score-num">${row.score.toFixed(2)}</span>`;
+            return `
+            <tr class="result" data-rank="${row.rank}" data-pages="${pagesOf(row).join(",")}">
+              <td class="result-wrap" colspan="4">
+                <div class="result-line">
+                  <span>${row.rank}</span>
+                  <span>${escapeHtml(row.preview)}</span>
+                  <span>${score}</span>
+                  <span class="chunk-col">${row.index}</span>
+                </div>
+                <div class="result-expand${startOpen ? " open" : ""}" data-expand="${row.rank}">
+                  <div class="result-expand-inner"><p class="full">${escapeHtml(row.full)}</p></div>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")
+        : `<tr><td colspan="4">No chunks passed the score threshold.</td></tr>`;
+      return `
+        <div class="card group-b">
+          <div class="card-head"><h2>Results <span class="doc-count">${results.rows.length}</span></h2><span class="mode-mark">${escapeHtml(results.retrieval || "naive")}</span></div>
+          <div class="list-scroll">
+            <table>
+              <thead><tr>
+                ${sortTh("results", "rank", "#")}
+                ${sortTh("results", "text", "Text")}
+                ${sortTh("results", "score", "Score")}
+                ${sortTh("results", "chunk", "Chunk", "chunk-col")}
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function previewHtml(preview) {
+      const pages = pagesOf(preview);
+      const tab = state.previewTab === "embedding" ? "embedding" : "preview";
+      const group = previewHome === "side" ? "group-a" : "group-b";
+      const embedBody = preview.embedded
+        ? `<p class="full">Model: ${escapeHtml(preview.model || "")}</p><p class="vector">${escapeHtml(preview.vector || "")}</p>`
+        : `<p class="chunk-empty">No embedding for this chunk.</p>`;
+      return `
+        <div class="card ${group}">
+          <div class="card-head">
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" data-tab="preview" class="${tab === "preview" ? "on" : ""}">Preview</button>
+              <button type="button" role="tab" data-tab="embedding" class="${tab === "embedding" ? "on" : ""}">Embedding</button>
+            </div>
+            <button class="x" type="button" id="close-preview" aria-label="Close preview">×</button>
+          </div>
+          <div class="tab-pane pdf-frame ${tab === "preview" ? "on" : ""}">
+            ${pages.map((page) => `<canvas data-page="${page}" aria-label="Page ${page} of common-sense.pdf"></canvas>`).join("")}
+          </div>
+          <div class="tab-pane embed-pane ${tab === "embedding" ? "on" : ""}">${embedBody}</div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    document.addEventListener("click", (event) => {
+      const sortHeader = event.target.closest("[data-sort-key]");
+      if (sortHeader) {
+        event.preventDefault();
+        event.stopPropagation();
+        const list = sortHeader.dataset.sortList;
+        const key = sortHeader.dataset.sortKey;
+        const current = state.sort[list];
+        if (current.key === key) current.dir = current.dir === 1 ? -1 : 1;
+        else {
+          current.key = key;
+          current.dir = 1;
+        }
+        render();
+        return;
+      }
+
+      const action = event.target.closest("[data-action]");
+      if (action) {
+        event.stopPropagation();
+        const id = Number(action.dataset.id);
+        if (action.dataset.action === "delete") {
+          const index = docs.findIndex((doc) => doc.id === id);
+          if (index >= 0) docs.splice(index, 1);
+          if (state.selectedId === id) {
+            state.selectedId = null;
+            state.embeddingIndex = null;
+          }
+          if (state.chunkingId === id) state.chunkingId = null;
+          if (state.queryDocId === id) closeQuery();
+          render();
+        } else if (action.dataset.action === "edit") {
+          state.renamingId = id;
+          render();
+        } else if (action.dataset.action === "chunk") {
+          openChunking(id);
+        } else if (action.dataset.action === "query") {
+          const doc = docById(id);
+          if (!doc || doc.status !== "ready") return;
+          state.chunkingId = null;
+          state.queryDocId = id;
+          state.results = null;
+          state.preview = null;
+          state.previewSlot = null;
+          state.expandedRank = null;
+          if (state.selectedId !== id) {
+            state.selectedId = id;
+            state.embeddingIndex = null;
+          }
+          render();
+        }
+        return;
+      }
+
+      if (event.target.closest(".menu")) {
+        event.stopPropagation();
+        return;
+      }
+
+      if (event.target.closest("#docs-gear")) {
+        if (state.docsView !== "loading") showDocsAfterWait("settings");
+        return;
+      }
+      if (event.target.closest("#save-settings")) {
+        if (state.docsView === "loading") return;
+        const id = Number(state.settingsDraft.embedding_model_id);
+        if (embeddingModels.some((model) => model.id === id)) {
+          session.preferences.embedding_model_id = id;
+        }
+        if (pdfLibraries.some((library) => library.id === state.settingsDraft.pdf_library)) {
+          session.preferences.pdf_library = state.settingsDraft.pdf_library;
+        }
+        showDocsAfterWait("documents");
+        return;
+      }
+      if (event.target.closest("#upload-btn")) {
+        addDummy();
+        return;
+      }
+      if (event.target.id === "close-chunks") {
+        closeChunks();
+        return;
+      }
+      if (event.target.id === "close-chunking") {
+        closeChunking();
+        return;
+      }
+      if (event.target.closest("#overlap-metric")) {
+        state.chunkForm.metric = state.chunkForm.metric === "percent" ? "tokens" : "percent";
+        render();
+        return;
+      }
+      if (event.target.id === "start-chunking") {
+        chunkDoc(state.chunkingId);
+        return;
+      }
+      if (event.target.id === "close-preview") {
+        state.preview = null;
+        state.previewSlot = null;
+        render();
+        return;
+      }
+      if (event.target.id === "close-query") {
+        closeQuery();
+        render();
+        return;
+      }
+
+      const tabBtn = event.target.closest("[data-tab]");
+      if (tabBtn) {
+        state.previewTab = tabBtn.dataset.tab === "embedding" ? "embedding" : "preview";
+        render();
+        return;
+      }
+
+      const chunkRow = event.target.closest("[data-chunk]");
+      if (chunkRow) {
+        const doc = docById(state.selectedId);
+        const chunk = doc && doc.chunks.find((item) => item.index === Number(chunkRow.dataset.chunk));
+        if (!chunk) return;
+        if (state.preview && state.previewSlot !== "side") previewMotion = true;
+        state.previewSlot = "side";
+        state.preview = previewFrom(chunk);
+        render();
+        return;
+      }
+
+      const resultRow = event.target.closest("[data-rank]");
+      if (resultRow) {
+        const rank = Number(resultRow.dataset.rank);
+        const row = state.results && state.results.rows.find((item) => item.rank === rank);
+        if (state.expandedRank === rank) {
+          state.resultMotion = { type: "close", rank };
+          state.expandedRank = null;
+        } else {
+          state.resultMotion = { type: "open", rank };
+          state.expandedRank = rank;
+        }
+        if (state.preview && state.previewSlot !== "lower") previewMotion = true;
+        state.previewSlot = "lower";
+        if (row) state.preview = previewFrom(row);
+        render();
+        return;
+      }
+
+      const docRow = event.target.closest("[data-doc]");
+      if (docRow && !event.target.closest("input")) {
+        selectDoc(Number(docRow.dataset.doc));
+      }
+    });
+
+    app.addEventListener("change", (event) => {
+      if (event.target.id === "embedding-model") state.settingsDraft.embedding_model_id = event.target.value;
+      if (event.target.id === "pdf-library") state.settingsDraft.pdf_library = event.target.value;
+    });
+
+    app.addEventListener("input", (event) => {
+      if (event.target.id === "query-q") {
+        const data = new FormData(event.target.form);
+        state.form = {
+          q: event.target.value,
+          retrieval: String(data.get("retrieval") || "naive"),
+          topk: String(data.get("topk") || "5"),
+          threshold: String(data.get("threshold") || "0.2")
+        };
+        state.keepQueryFocus = true;
+        render();
+      }
+      if (event.target.id === "doc-search") {
+        state.search = event.target.value;
+        state.keepSearchFocus = true;
+        render();
+      }
+      if (event.target.id === "chunk-size" || event.target.id === "chunk-overlap") {
+        const key = event.target.id === "chunk-size" ? "size" : "overlap";
+        state.chunkForm[key] = event.target.value;
+        state.keepChunkFocus = event.target.id;
+        render();
+      }
+    });
+
+    app.addEventListener("keydown", (event) => {
+      if (event.target.id !== "rename-input") return;
+      if (event.key === "Enter") event.target.blur();
+      if (event.key === "Escape") {
+        state.renamingId = null;
+        render();
+      }
+    });
+
+    app.addEventListener("focusout", (event) => {
+      if (event.target.id !== "rename-input") return;
+      const doc = docById(Number(event.target.dataset.rename));
+      const next = event.target.value.trim();
+      if (doc && next) doc.name = next;
+      state.renamingId = null;
+      render();
+    });
+
+    app.addEventListener("submit", (event) => {
+      if (event.target.id !== "query-form") return;
+      event.preventDefault();
+      runQuery(event.target);
+    });
+
+    app.addEventListener("dragover", (event) => {
+      if (!event.target.closest("#docs-panel")) return;
+      event.preventDefault();
+      if (!state.drag) {
+        state.drag = true;
+        document.getElementById("docs-panel").classList.add("drag");
+      }
+    });
+
+    app.addEventListener("dragleave", (event) => {
+      if (event.target.closest("#docs-panel") && state.drag) {
+        state.drag = false;
+        const panel = document.getElementById("docs-panel");
+        if (panel) panel.classList.remove("drag");
+      }
+    });
+
+    app.addEventListener("drop", (event) => {
+      if (!event.target.closest("#docs-panel")) return;
+      event.preventDefault();
+      state.drag = false;
+      const file = event.dataTransfer && event.dataTransfer.files[0];
+      addDummy(file ? file.name : "");
+    });
+
+    document.addEventListener("toggle", (event) => {
+      const details = event.target;
+      if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("menu")) return;
+      const pop = details.querySelector(".menu-pop") || details._pop;
+      if (!pop) return;
+      if (details.open) {
+        details._pop = pop;
+        document.body.appendChild(pop);
+        pop.classList.add("floating");
+        const summary = details.querySelector("summary");
+        const rect = summary.getBoundingClientRect();
+        const width = pop.offsetWidth;
+        const height = pop.offsetHeight;
+        let top = rect.bottom + 6;
+        if (top + height > window.innerHeight - 8 && rect.top - height - 6 > 8) top = rect.top - height - 6;
+        let left = rect.right - width;
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+        pop.style.top = top + "px";
+        pop.style.left = left + "px";
+      } else if (details._pop) {
+        details._pop.classList.remove("floating");
+        details._pop.style.top = "";
+        details._pop.style.left = "";
+        details.appendChild(details._pop);
+        details._pop = null;
+      }
+    }, true);
+
+    app.addEventListener("scroll", (event) => {
+      if (!event.target.closest || !event.target.closest(".list-scroll")) return;
+      app.querySelectorAll("details.menu[open]").forEach((details) => { details.open = false; });
+    }, true);
+
+    window.addEventListener("resize", () => {
+      const workspace = document.querySelector(".workspace");
+      if (workspace) fitWorkspace(workspace);
+    });
+
+    render();
+  </script>
+</body>
+</html>
