@@ -19,6 +19,8 @@ Backend packages are in `backend/requirements.txt` (`openai`, `psycopg`, FastAPI
 ```
 ragatoni/
 ├── README.md
+├── backend/
+│   └── docker-compose.yml
 └── plan/
     ├── README.md
     ├── general.md

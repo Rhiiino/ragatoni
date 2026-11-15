@@ -1,0 +1,137 @@
+# backend/docker-compose.yml
+#
+# Backend containers named in plan/general.md:
+#   api     FastAPI REST API
+#   db      Postgres with pgvector
+#   redis   cache, Celery broker, and result backend
+#   celery  worker for extract, chunk, and embed
+#   garage  S3 storage for uploaded documents
+# The React frontend is not in this file.
+# general.md does not assign host ports. The published ports are the usual
+# ones for each service. Config paths follow plan/directory.md.
+# Secrets and API keys come from backend/.env (Compose interpolates it).
+
+name: ragatoni
+
+x-app-image: &app-image
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://${POSTGRES_USER:-ragatoni}:${POSTGRES_PASSWORD:-ragatoni}@db:5432/${POSTGRES_DB:-ragatoni}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  S3_ENDPOINT_URL: http://garage:3900
+  S3_BUCKET: ${S3_BUCKET:-ragatoni}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+  S3_REGION: ${S3_REGION:-garage}
+  SESSION_SECRET: ${SESSION_SECRET:-}
+  EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+
+services:
+  api:
+    <<: *app-image
+    container_name: ragatoni-api
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      <<: *app-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      garage:
+        condition: service_started
+    networks:
+      - backend
+
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: ragatoni-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ragatoni}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragatoni}
+      POSTGRES_DB: ${POSTGRES_DB:-ragatoni}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./config/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - backend
+
+  redis:
+    image: redis:7
+    container_name: ragatoni-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - backend
+
+  celery:
+    <<: *app-image
+    container_name: ragatoni-celery
+    command:
+      [
+        "celery",
+        "-A",
+        "app.celery.worker",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=20",
+      ]
+    environment:
+      <<: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      garage:
+        condition: service_started
+    networks:
+      - backend
+
+  garage:
+    image: dxflrs/garage:v2.5.0
+    container_name: ragatoni-garage
+    command: ["/garage", "-c", "/etc/garage.toml", "server"]
+    ports:
+      - "3900:3900"
+      - "3901:3901"
+      - "3903:3903"
+    volumes:
+      - ./config/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: ragatoni-backend
+
+volumes:
+  db_data:
+  redis_data:
+  garage_meta:
+  garage_data:

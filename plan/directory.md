@@ -1,56 +1,32 @@
+# Ragatoni R2 — Backend Directory Structure
 
-
-# Directory
-
-## Directory structure
-
-```
-ragatoni/
-├── README.md
-├── plan/
-├── frontend/
-└── backend/
-    ├── .env
-    ├── Dockerfile
-    ├── docker-compose.yml
-    ├── requirements.txt
-    ├── app/
-    │   ├── api/
-    │   │   ├── main.py
-    │   │   └── routes/
-    │   └── celery/
-    │       ├── worker.py
-    │       └── tasks.py
-    ├── config/
-    │   ├── garage.toml
-    │   ├── redis.conf
-    │   ├── postgres-init/
-    │   │   └── 001-init.sql
-    │   └── README.md
-    └── migrations/
+```yaml
+backend/
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── plan/                          # planning docs (unchanged)
+└── app/
+    ├── main.py                    # builds the FastAPI app, includes every router
+    ├── config.py                  # shared settings: Postgres, Redis, Garage URLs
+    └── modules/
+        ├── documents/
+        │   ├── router.py
+        │   ├── schemas.py
+        │   ├── service.py
+        │   ├── repository.py
+        │   └── config.py
+        ├── retrieval/
+        │   ├── router.py
+        │   ├── schemas.py
+        │   ├── service.py
+        │   ├── repository.py
+        │   └── config.py
+        └── (other domain modules as needed)
 ```
 
-## What each part is
-
-- `README.md` — how the project runs.
-- `plan/` — planning notes and the dashboard mock.
-- `frontend/` — the React, TypeScript, Tailwind, and Vite app.
-- `backend/` — the API, the worker, and the files that run them.
-- `backend/.env` — secrets and service URLs for the API and the worker.
-- `backend/Dockerfile` — image used by the API and the Celery worker.
-- `backend/docker-compose.yml` — API, Celery worker, Postgres, Redis, and Garage.
-- `backend/requirements.txt` — Python packages for that image.
-- `backend/app/` — Python source for the two processes that run code.
-- `backend/app/api/` — the web server.
-- `backend/app/api/main.py` — FastAPI entrypoint.
-- `backend/app/api/routes/` — HTTP routes.
-- `backend/app/celery/` — the background worker.
-- `backend/app/celery/worker.py` — Celery worker entrypoint.
-- `backend/app/celery/tasks.py` — extract, chunk, and embed tasks.
-- `backend/config/` — Postgres, Redis, and Garage setup.
-- `backend/config/garage.toml` — single-node Garage config: data directory, RPC listen address, S3 listen address, and zone `dc1`.
-- `backend/config/redis.conf` — Redis bind address and port.
-- `backend/config/postgres-init/` — SQL that Postgres runs on first boot.
-- `backend/config/postgres-init/001-init.sql` — placeholder for the first migration and any seed data.
-- `backend/config/README.md` — what the config files are for.
-- `backend/migrations/` — database migrations after first boot.
+Notes:
+- No src/ folder. app/ sits at the backend root; the Compose build context is the backend root, so src would only add a path layer in the Dockerfile with no benefit at this scale.
+- Each module follows the per-service template: router.py (API layer), schemas.py (request/response structures), service.py (business logic), repository.py (database reads/writes/updates/deletes), config.py (module-specific configuration).
+- This is a modular monolith: each module has its own router but all run in the single FastAPI process. Celery tasks (app/celery) call into the same service modules so logic is not duplicated between sync and async paths.
+- Services talk to Postgres, Redis, and Garage through the repository/client modules, keeping infrastructure details out of business rules.
